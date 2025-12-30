@@ -13,6 +13,8 @@
 
 - [Herramientas (Nmap & más)](Herramientas.md)
 
+- [Fuzzing] (Fuzzing.md)
+
 ### Explotación
 
 - [SQL Injection](SQLi.md)
