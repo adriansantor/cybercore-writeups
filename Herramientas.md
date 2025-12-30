@@ -1,48 +1,112 @@
 # NMAP
 
 ## Cosas que "no afectan" a la enumeración
---open (solo mostrar puertos abiertos)
--oN, -oG, -oX, -oA (export a un tipo de archivo)
---min-rate (requests minimas)
--T0-5 (perfiles)
+
+Estos parámetros no influyen en el escaneo, pero son útiles para filtrar resultados y configurar el comportamiento:
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `--open` | Mostrar solo puertos abiertos en los resultados |
+| `-oN` | Exportar resultados en formato normal (texto) |
+| `-oG` | Exportar resultados en formato grepeable |
+| `-oX` | Exportar resultados en formato XML |
+| `-oA` | Exportar resultados en todos los formatos simultáneamente |
+| `--min-rate` | Especificar número mínimo de peticiones por segundo |
+| `-T0-5` | Establecer perfil de timing (T0=paranoid, T5=insane) |
 
 ## Parámetros para diferentes enumeraciones
--sn buscar hosts en red
 
--O detectar OS
--pPUERTOS o -p- para todos
--n desactivar resolución DNS
--Pn desactivar host discovery (arp)
--sT --> TCP Connect Scan
--sU --> UDP
--sV --> version de servicios
--sC --> scripts comunes
-	Hay varias categorías de scripts
-		auth
-		broadcast
-		brute
-		default
-		discovery
-		dos
-		exploit
-		external
-		fuzzer
-		intrusive
-		malware
-		safe
-		version
-		vuln
-	--script="vuln and safe"
--sS --> SYN scan --> en vez de hacer SYN | SYN/ACK | ACK hace SYN | SYN/ACK | RST --> no deja evidencia y es más rápido
--f --> fragmentar paquetes
--D --> paquetes decoy, tienes q pasarle la ip que quieres que mande los paquetes
---source-port --> hace q los paquetes le lleguen desde un puerto
---data-length  --> length del paquete
---spoof-mac MARCA --> falsifica una mac
+### Descubrimiento de hosts
 
-# Seclists
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-sn` | Buscar hosts en la red |
+| `-Pn` | Desactivar host discovery (ARP) |
 
+### Detección del sistema operativo
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-O` | Detectar OS |
+
+### Puertos
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-p PUERTOS` | Especificar puertos (ej: 80,443) |
+| `-p-` | Escanear todos los puertos |
+
+### Técnicas de escaneo
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-sT` | TCP Connect Scan |
+| `-sS` | **SYN scan** - No completa la conexión; envía SYN → SYN/ACK → RST. Más rápido y sigiloso que -sT |
+| `-sU` | UDP scan |
+
+### Detección de versiones y servicios
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-sV` | Detectar versión de servicios |
+| `-sC` | Ejecutar scripts comunes |
+
+#### Categorías de scripts (para `-sC`)
+- `auth` - Pruebas de autenticación
+- `broadcast` - Scripts de broadcast
+- `brute` - Ataques de fuerza bruta
+- `default` - Scripts por defecto
+- `discovery` - Descubrimiento de servicios
+- `dos` - Pruebas de denegación de servicio
+- `exploit` - Exploits conocidos
+- `external` - Scripts que contactan servicios externos
+- `fuzzer` - Fuzzing
+- `intrusive` - Scripts intrusivos
+- `malware` - Detección de malware
+- `safe` - Scripts seguros
+- `version` - Detección de versiones
+- `vuln` - Detección de vulnerabilidades
+
+**Uso**: `--script="vuln and safe"` (ejecuta scripts que sean seguros Y detecten vulnerabilidades)
+
+### Ofuscación y evasión
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-f` | Fragmentar paquetes para evasión |
+| `-D <IPs>` | Enviar paquetes decoy desde IPs especificadas |
+| `--source-port PUERTO` | Especificar puerto origen (útil para bypass de firewalls) |
+| `--data-length BYTES` | Establecer tamaño del paquete |
+| `--spoof-mac MARCA` | Falsificar dirección MAC |
+
+### Resolución DNS
+
+| Parámetro | Descripción |
+|-----------|-------------|
+| `-n` | Desactivar resolución DNS |
+
+# SecLists
+
+SecLists es una colección completa de diccionarios para diferentes tipos de ataques de fuerza bruta y fuzzing.
+
+**Instalación**:
+```bash
 git clone https://github.com/danielmiessler/SecLists.git
+```
+
+### Rutas comunes de diccionarios
+
+| Tipo | Ruta | Descripción |
+|------|------|-------------|
+| **Descubrimiento web** | `SecLists/Discovery/Web-Content/common.txt` | Directorios y archivos comunes |
+| **Descubrimiento web** | `SecLists/Discovery/Web-Content/raft-small-words.txt` | Palabras pequeñas para fuzzing |
+| **Descubrimiento web** | `SecLists/Discovery/Web-Content/big.txt` | Diccionario grande de directorios |
+| **Subdominios** | `SecLists/Discovery/DNS/subdomains-top1million-110000.txt` | Top 110k subdominios |
+| **Subdominios** | `SecLists/Discovery/DNS/subdomains-top1million-5000.txt` | Top 5k subdominios (más rápido) |
+| **Usuarios comunes** | `SecLists/Usernames/xato-net-10-million-usernames.txt` | 10 millones de usuarios comunes |
+| **Usuarios comunes** | `SecLists/Usernames/top-usernames-shortlist.txt` | Top usuarios (versión corta) |
+| **RockYou** | `SecLists/Passwords/Leaked-Databases/rockyou.txt` | Base de datos RockYou (14M contraseñas) |
+| **Contraseñas comunes** | `SecLists/Passwords/Common-Credentials/10-million-password-list-top-1000.txt` | Top 1000 contraseñas |
 
 
 # John The Ripper

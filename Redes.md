@@ -1,5 +1,4 @@
-![[Pasted image 20251111215139.png]]
-
+![Topologías de red](Pasted%20image%2020251111215139.png)
 
 # Topologías:
 ## Point2Point
@@ -37,7 +36,7 @@ Filtra las requests que entran.
 Los transparent simplemente actuan de mediadores, desde fuera se ve como un simple comunicador. Los not transparent suelen cortar toda la conexión con internet, y se nos suele dar configuración especial para las aplicaciones que lo necesiten
 
 # Modelo OSI
-![[Pasted image 20251111222355.png]]
+![Modelo OSI](Pasted%20image%2020251111222355.png)
 
 # Terminología
 
