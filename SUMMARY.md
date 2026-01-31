@@ -13,7 +13,7 @@
 
 - [Herramientas (Nmap & más)](Herramientas.md)
 
-- [Fuzzing] (Fuzzing.md)
+- [Fuzzing](Fuzzing.md)
 
 ### Explotación
 
