@@ -184,6 +184,79 @@ id | grep dbus
 # - Ejecutar acciones privilegiadas del sistema
 ```
 
+El **D-Bus** es un bus IPC (Inter-Process Comunication) que conecta procesos de usuario y servicios del sistema.
+
+Dos buses importantes:
+- **System Bus** (`/run/dbus/system_bus_socket`) → servicios de sistema (NetworkManager, logind, UPower, etc.)
+- **Session Bus** (por usuario) → apps de escritorio
+
+Riesgo principal:
+- Si un método D-Bus privilegiado está mal protegido por política (o por la lógica del servicio), un usuario local puede ejecutar acciones de alto impacto sin ser root.
+
+##### Enumeración práctica de superficie D-Bus
+
+```bash
+# Socket del bus del sistema
+ls -l /run/dbus/system_bus_socket
+
+# Servicios registrados en el system bus
+busctl list
+
+# Árbol de objetos de un servicio (ejemplo: logind)
+busctl tree org.freedesktop.login1
+
+# Interfaces y métodos expuestos
+busctl introspect org.freedesktop.login1 /org/freedesktop/login1
+
+# Alternativa con gdbus
+gdbus introspect --system --dest org.freedesktop.login1 --object-path /org/freedesktop/login1
+```
+
+##### Dónde se decide la autorización
+
+En entornos modernos, muchas acciones privilegiadas pasan por **PolicyKit (polkit)**.
+
+```bash
+# Acciones polkit disponibles
+pkaction | head -40
+
+# Ver detalle de una acción concreta
+pkaction --action-id org.freedesktop.login1.reboot --verbose
+
+# Ver reglas locales de polkit
+ls -la /etc/polkit-1/rules.d/
+ls -la /usr/share/polkit-1/actions/
+```
+
+Señales de riesgo:
+- Reglas demasiado amplias (usuarios/grupos no administrativos con `yes`)
+- Métodos sensibles permitidos con autenticación débil o “active session” ambigua
+- Servicios D-Bus custom sin validación fuerte de UID/origen
+
+##### Ejemplo controlado de llamada D-Bus
+
+```bash
+# Pedir reboot por D-Bus (puede requerir auth según política)
+busctl call org.freedesktop.login1 \
+   /org/freedesktop/login1 \
+   org.freedesktop.login1.Manager Reboot b true
+```
+
+Si la política está bien, el sistema pedirá autenticación o denegará acceso.
+Si está mal, la llamada podría ejecutarse sin controles adecuados.
+
+##### Explicación técnica: CVE-2025-6019
+
+`CVE-2025-6019` se describe públicamente como una vulnerabilidad de **escalada local de privilegios** en el flujo de autorización entre **D-Bus** y **PolicyKit (polkit)**.
+
+Idea clave del fallo:
+- Un usuario local sin privilegios puede forzar un contexto de autorización incorrecto en una llamada D-Bus privilegiada
+- El servicio (udisks2) termina evaluando la petición como más confiable de lo que debería
+- Resultado: ejecución de acciones administrativas sin el nivel de autenticación esperado
+
+Este CVE nos permite obtener una sesión explotando los PAM (Pluggable Authentication Modules), para tener la polkit allow_active. Con esto, podemos montar imágenes de disco de manera
+privilegiada por la race-condition Filesystem.Resize del DBus. Al resizear una imagen montada en el loop, libblockdev la monta para realizar los cambios, pero da error al desmontarla por el cambio de tamaño, dejando la imagen accesible en /tmp/blockdev*/, pero montada como root.
+
 #### 4. **adm, shadow, journal** - Acceso a Archivos Privilegiados
 
 ```bash
@@ -452,7 +525,130 @@ ls -l /usr/local/bin/grupo_script
 # Posible escalada similar a SUID
 ```
 
-## 7. Path Hijacking
+## 7. Buffer Overflow
+
+### Concepto
+
+Un **Buffer Overflow** ocurre cuando un programa escribe más datos de los que caben en una zona de memoria (buffer).
+
+Si el binario es vulnerable, ese exceso puede:
+- Sobrescribir variables críticas
+- Corromper direcciones de retorno en la pila
+- Alterar el flujo de ejecución del programa
+- En binarios SUID root, derivar en ejecución de código con privilegios de root
+
+### Tipos comunes
+
+1. **Stack-based overflow**
+   - Ocurre en el stack
+   - Suele impactar `saved RBP (Base Pointer)` y dirección de retorno (`RIP` en x86_64)
+2. **Heap-based overflow**
+   - Ocurre en memoria dinámica (heap)
+   - Puede corromper metadatos del heap o punteros
+3. **Off-by-one / off-by-few**
+   - Escritura de 1 o pocos bytes fuera de límite
+
+### Anatomía rápida en x86_64
+
+En una función vulnerable, la pila suele verse así:
+
+```text
+[ buffer local ]
+[ saved RBP   ]
+[ return RIP  ]
+```
+
+Si un input supera el tamaño de `buffer`, puede llegar hasta `RIP (Instruction Pointer)` y redirigir ejecución.
+
+### ¿Por qué importa en escalada de privilegios?
+
+Si tenemos un **binario SUID**, y podemos manejar su ejecución, supone poder ejecutar cosas como root.
+
+Ejemplo típico de cadena de ataque:
+- Binario SUID root vulnerable a overflow
+- Control de `RIP`
+- Ejecución de código (shellcode, `ret2libc`, ROP)
+- Shell con eUID=0
+
+### Señales de riesgo en binarios
+
+Buscar binarios que:
+- Usen funciones inseguras (`gets`, `strcpy`, `sprintf`, `scanf` sin límites)
+- Lean entrada del usuario sin validar longitud
+- Sean SUID/SGID o corran como root
+
+```bash
+# Encontrar binarios SUID
+find / -perm -4000 -type f 2>/dev/null
+
+# Buscar strings sospechosas en binarios
+strings /ruta/binario | grep -E "gets|strcpy|sprintf|scanf"
+
+# Revisar protecciones del binario
+checksec --file=/ruta/binario
+```
+
+Salida típica de `checksec` a interpretar:
+- **Canary: disabled** → más fácil sobreescribir stack sin detección
+- **NX: disabled** → permite ejecutar shellcode en stack
+- **PIE: disabled** → direcciones más predecibles
+- **RELRO: Partial/None** → más superficie para técnicas avanzadas
+
+### Ejemplo
+
+```c
+// vulnerable.c
+#include <stdio.h>
+#include <string.h>
+
+void vulnerable(char *input) {
+   char buffer[64];
+   strcpy(buffer, input);
+   printf("Input: %s\n", buffer);
+}
+
+int main(int argc, char **argv) {
+   if (argc < 2) return 1;
+   vulnerable(argv[1]);
+   return 0;
+}
+```
+
+### Flujo básico de análisis
+
+```bash
+python3 -c 'print("A"*1000)' | /ruta/binario
+
+gdb /ruta/binario
+# (gdb) run < <(python3 -c 'print("A"*1000)')
+# (gdb) info registers
+```
+
+Si el programa cae con `segfault` al recibir entradas grandes, puede existir un overflow explotable.
+
+### Ejemplo: encontrar offset de control de RIP
+
+```bash
+# Generar patrón cíclico
+python3 -c 'from pwn import cyclic; print(cyclic(300).decode())' > pattern.txt
+
+# Ejecutar con el patrón
+./vulnerable "$(cat pattern.txt)"
+
+# Revisar en gdb qué valor quedó en RIP
+gdb ./vulnerable
+# (gdb) run "$(cat pattern.txt)"
+# (gdb) info registers
+
+# Calcular offset exacto
+python3 -c 'from pwn import cyclic_find; print(cyclic_find(0x6161616c))'
+```
+
+Con ese offset, se puede validar control de retorno sustituyendo `RIP` por un valor conocido de prueba.
+
+---
+
+## 8. Path Hijacking
 
 ### Concepto
 
@@ -534,7 +730,7 @@ export PATH=/usr/bin:/bin
 
 ---
 
-## 8. Capabilities (Capacidades Linux)
+## 9. Capabilities (Capacidades Linux)
 
 ### Concepto
 
@@ -703,7 +899,7 @@ gdb -p 1234
 
 ---
 
-## 9. CRON - Tareas Automáticas
+## 10. CRON - Tareas Automáticas
 
 ### ¿Qué es CRON?
 

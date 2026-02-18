@@ -1206,3 +1206,5 @@ gobuster dir -u http://target.com -w wordlist.txt -x .php,.txt,.html,.bak
 
 
 
+
+
