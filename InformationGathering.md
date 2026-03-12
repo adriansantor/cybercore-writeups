@@ -1,4 +1,3 @@
-Google Hacking is an umbrella term for all techniques applied on a google search bar that could help us gather additional information about an attack's target.
 # Passive Information Gathering & Footprinting
 Passive information gathering refers to any information gathering technique that doesn't involve us using anything other than simple commands and readily available information to help us build an effective attack.
 ## Google Dorks
