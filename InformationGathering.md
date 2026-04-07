@@ -38,7 +38,7 @@ The command `whois` is a preinstalled command in kali that returns a list of all
 | Data        | Attack                                                                                                                   |
 | :---------- | ------------------------------------------------------------------------------------------------------------------------ |
 | email       | spear-phishing                                                                                                           |
-| Name Server | DOS?, DNS attack                                                                                                         |
+| Name Server | DOS, DNS attack                                                                                                         |
 | Directions  | Physical attacks (highly illegal, but useful to know if your company's location is public to recommend on-site security) |
 | Update Date | Vulnerable downgraded versions                                                                                           |
 ## The Harvester
@@ -50,6 +50,4 @@ This is yet another preinstalled tool in the kali suite. It allows us to get a l
 | `-d` | Domain to search                       | `-d amazon.com` |
 | `-l` | Limit of results                       | `-l 500`        |
 | `-b` | Search engine (all is a valid sentece) | `-b shodan`     |
-## Shodan
 
-c
