@@ -50,6 +50,4 @@ This is yet another preinstalled tool in the kali suite. It allows us to get a l
 | `-d` | Domain to search                       | `-d amazon.com` |
 | `-l` | Limit of results                       | `-l 500`        |
 | `-b` | Search engine (all is a valid sentece) | `-b shodan`     |
-## Shodan
 
-c
