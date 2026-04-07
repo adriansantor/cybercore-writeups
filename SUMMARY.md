@@ -9,6 +9,8 @@
 
 ### Enumeración & Reconocimiento
 
+- [Public Information Gathering](InformationGathering.md)
+
 - [Información de Seguridad](Infosec.md)
 
 - [Herramientas (Nmap & más)](Herramientas.md)

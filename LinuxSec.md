@@ -255,7 +255,8 @@ Idea clave del fallo:
 - Resultado: ejecución de acciones administrativas sin el nivel de autenticación esperado
 
 Este CVE nos permite obtener una sesión explotando los PAM (Pluggable Authentication Modules), para tener la polkit allow_active. Con esto, podemos montar imágenes de disco de manera
-privilegiada por la race-condition Filesystem.Resize del DBus. Al resizear una imagen montada en el loop, libblockdev la monta para realizar los cambios, pero da error al desmontarla por el cambio de tamaño, dejando la imagen accesible en /tmp/blockdev*/, pero montada como root.
+privilegiada por la race-condition Filesystem.Resize del DBus. Al resizear una imagen montada en el loop, libblockdev la monta para realizar los cambios, pero da error al desmontarla 
+por el cambio de tamaño, dejando la imagen accesible en /tmp/blockdev*/, pero montada como root.
 
 #### 4. **adm, shadow, journal** - Acceso a Archivos Privilegiados
 
