@@ -42,4 +42,4 @@
 
 ### First CTF
 
-- [Guion Blue Team](meetups/FirstCTF/guionBlue.md)
+- [Guion Blue](meetups/FirstCTF/guionBlue.md)
