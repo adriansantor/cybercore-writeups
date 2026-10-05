@@ -37,3 +37,9 @@
 ## Scripting
 
 - [BASH](BASH.md)
+
+## Meetups
+
+### First CTF
+
+- [Guion Blue Team](meetups/FirstCTF/guionBlue.md)

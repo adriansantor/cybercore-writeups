@@ -101,6 +101,28 @@ Los puertos TCP pueden estar en estos estados:
 | `-sN/-sF/-sX` | Null/FIN/Xmas Scan | Evasión, RFC válido | Filtrado por firewalls modernas |
 | `-sA` | TCP ACK Scan | Mapeo de firewalls | No determina si puerto está abierto |
 
+También existen técnicas menos habituales para casos concretos:
+
+- `-sW` (TCP Window Scan): similar al escaneo ACK, pero analiza el tamaño de la ventana TCP en sistemas que lo permiten.
+- `-sM` (TCP Maimon Scan): envía paquetes FIN/ACK y puede ser útil en determinados sistemas derivados de BSD.
+- `-sN`, `-sF` y `-sX` (NULL, FIN y Xmas Scan): utilizan combinaciones de flags TCP inusuales para intentar evadir ciertos firewalls sin seguimiento de estado.
+- `-sY` y `-sZ` (SCTP INIT y Cookie-Echo Scan): realizan escaneos específicos del protocolo SCTP.
+- `-sO` (IP Protocol Scan): determina qué protocolos de nivel de red, como ICMP, TCP, UDP o GRE, admite el objetivo.
+
+### Selección de puertos y rendimiento
+
+Además de los rangos mostrados en los ejemplos, Nmap permite seleccionar puertos y regular el ritmo del escaneo:
+
+- `-p <puertos>`: especifica los puertos que se van a escanear, por ejemplo, `-p 80,443` o `-p 1-1024`.
+- `-p-`: escanea los 65.535 puertos TCP, del 1 al 65.535.
+- `-p U:53,111,T:21-25`: especifica puertos UDP (`U:`) y TCP (`T:`) de forma independiente.
+- `-F` (*Fast Scan*): escanea los 100 puertos más comunes en lugar de los 1.000 habituales.
+- `-r` (*Consecutive Scan*): escanea los puertos de forma secuencial en lugar de ordenarlos aleatoriamente.
+- `--top-ports <número>`: escanea los puertos más frecuentes según la base de datos interna de Nmap.
+- `--port-ratio <ratio>`: escanea los puertos cuya frecuencia de uso sea superior al valor indicado, entre 0 y 1.
+- `--max-rate <número>`: establece el límite máximo de paquetes por segundo.
+- `--scan-delay <tiempo>`: fuerza un retraso mínimo entre sondas para evitar saturar la red o respetar límites de tasa.
+
 ### Ejemplos de Técnicas
 
 **Ejemplo 1: SYN Scan (recomendado)**
@@ -191,6 +213,21 @@ sudo nmap -sS -f -D 192.168.1.1,192.168.1.2,ME target.example.com
 | `vuln` | Detección de vulnerabilidades | Exploits sin ejecutar |
 
 ### Uso de Scripts NSE
+
+NSE está basado en Lua y se activa principalmente mediante `-sC`, que equivale a `--script=default`, o mediante `--script`. Las categorías `default`, `discovery`, `safe`, `intrusive`, `vuln`, `exploit`, `auth` y `brute` permiten seleccionar scripts según su finalidad; los scripts `exploit`, `intrusive` y `brute` deben utilizarse únicamente en entornos autorizados.
+
+Además de nombres y categorías, `--script` admite listas separadas por comas, patrones y expresiones como `--script "discovery and safe"` o `--script "smb-*"`.
+
+```bash
+# Pasar argumentos personalizados a un script
+nmap --script <script> --script-args <clave=valor> target.example.com
+
+# Cargar argumentos desde un archivo y mostrar el tráfico del script
+nmap --script <script> --script-args-file argumentos.txt --script-trace target.example.com
+
+# Actualizar la base de datos de scripts
+nmap --script-updatedb
+```
 
 ```bash
 # Ejecutar categoría de scripts específica
@@ -1029,6 +1066,31 @@ meterpreter > ps                 # Listar procesos
 meterpreter > migrate 4356       # Migrar a proceso
 meterpreter > background         # Poner en background
 ```
+
+### Comandos habituales de Meterpreter
+
+Una vez establecida una sesión de Meterpreter, estos comandos permiten recopilar información del sistema objetivo:
+
+#### Información del sistema y del entorno
+
+- `sysinfo`: muestra el nombre del equipo, la versión del sistema operativo, la arquitectura y el dominio.
+- `getuid`: muestra el usuario con el que se ejecuta la sesión.
+- `getprivs`: enumera los privilegios del token actual.
+- `getenv PATH` o `getenv TEMP`: muestra variables de entorno concretas.
+
+#### Reconocimiento de red
+
+- `ipconfig`: muestra interfaces, direcciones IP, máscaras y MAC en Windows.
+- `ifconfig`: muestra información equivalente en sistemas Unix-like.
+- `netstat`: muestra conexiones activas y puertos en escucha.
+- `route`: muestra la tabla de enrutamiento.
+
+#### Procesos y archivos
+
+- `ps`: lista los procesos en ejecución.
+- `getpid`: muestra el identificador del proceso en el que se ejecuta Meterpreter.
+- `ls`: lista archivos y directorios.
+- `pwd`: muestra el directorio de trabajo actual.
 
 ### Ejemplo 4: Multi-handler para Reverse Shells
 
