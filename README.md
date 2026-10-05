@@ -57,5 +57,5 @@ CyberCore es una asociación dedicada a la formación, investigación y práctic
 
 ---
 
-**Última actualización**: Diciembre 2025  
+**Última actualización**: Octubre 2026
 **Licencia**: Esta documentación es compartida entre los miembros de CyberCore para fines educativos.
